@@ -1,74 +1,117 @@
 -- // Serviços
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 
--- // Animação
+-- // Animações
 local wheelChairAnim = ReplicatedStorage.NoMotorAnimations:WaitForChild("WheelChairAnimation")
-local animTrack = humanoid:LoadAnimation(wheelChairAnim)
+local riderAnim = StarterGui.Player8Handler.PlayerHandler2:WaitForChild("RiderAnimationOne")
+local carryAnim = StarterGui.Player8Handler.Client_To_Client:WaitForChild("AcceptCarryHurtAnimation")
+
+-- Tracks
+local wheelTrack = humanoid:LoadAnimation(wheelChairAnim); wheelTrack.Looped = true
+local riderTrack = humanoid:LoadAnimation(riderAnim); riderTrack.Looped = true
+local carryTrack = humanoid:LoadAnimation(carryAnim); carryTrack.Looped = true
+
+local allTracks = {wheelTrack, riderTrack, carryTrack}
 
 -- // ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "WheelChairGui"
+screenGui.Name = "AnimationsGui"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 -- // Frame principal
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 180, 0, 60)
+frame.Size = UDim2.new(0, 240, 0, 200) -- maior
 frame.Position = UDim2.new(0.05, 0, 0.2, 0)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- preto elegante
 frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
 frame.Parent = screenGui
 
--- UICorner
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
+corner.CornerRadius = UDim.new(0, 16)
 corner.Parent = frame
 
 -- Título
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0.4, 0)
+title.Size = UDim2.new(1, 0, 0.2, 0)
 title.BackgroundTransparency = 1
-title.Text = "brookhaven Animation"
+title.Text = "Hub de animaçoes"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.GothamBold
 title.TextScaled = true
 title.Parent = frame
 
--- Botão Toggle
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0.6, 0, 0.4, 0)
-toggleBtn.Position = UDim2.new(0.2, 0, 0.55, 0)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-toggleBtn.Text = "OFF"
-toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextScaled = true
-toggleBtn.Parent = frame
+-- // Função para criar toggles
+local function createToggle(name, order, track)
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(0.8, 0, 0.18, 0)
+    toggleBtn.Position = UDim2.new(0.1, 0, 0.2 + (0.2 * order), 0)
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- branco off
+    toggleBtn.Text = name .. " (OFF)"
+    toggleBtn.TextColor3 = Color3.fromRGB(0, 0, 0) -- preto no texto
+    toggleBtn.Font = Enum.Font.GothamBold
+    toggleBtn.TextScaled = true
+    toggleBtn.Parent = frame
 
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 8)
-btnCorner.Parent = toggleBtn
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 10)
+    btnCorner.Parent = toggleBtn
 
--- // Sistema Toggle
-local playing = false
+    local playing = false
+    toggleBtn.MouseButton1Click:Connect(function()
+        if playing then
+            track:Stop()
+            playing = false
+            toggleBtn.Text = name .. " (OFF)"
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            toggleBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+        else
+            track:Play()
+            playing = true
+            toggleBtn.Text = name .. " (ON)"
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end
+    end)
+end
 
-toggleBtn.MouseButton1Click:Connect(function()
-	if playing then
-		animTrack:Stop()
-		playing = false
-		toggleBtn.Text = "OFF"
-		toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-	else
-		animTrack:Play()
-		playing = true
-		toggleBtn.Text = "ON"
-		toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-	end
+-- // Criar os toggles
+createToggle("WheelChair", 0, wheelTrack)
+createToggle("Rider", 1, riderTrack)
+createToggle("Carry Hurt", 2, carryTrack)
+
+-- // Botão Stop All
+local stopBtn = Instance.new("TextButton")
+stopBtn.Size = UDim2.new(0.8, 0, 0.18, 0)
+stopBtn.Position = UDim2.new(0.1, 0, 0.8, 0)
+stopBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+stopBtn.Text = "⛔ Stop All"
+stopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+stopBtn.Font = Enum.Font.GothamBold
+stopBtn.TextScaled = true
+stopBtn.Parent = frame
+
+local stopCorner = Instance.new("UICorner")
+stopCorner.CornerRadius = UDim.new(0, 10)
+stopCorner.Parent = stopBtn
+
+stopBtn.MouseButton1Click:Connect(function()
+    for _, track in ipairs(allTracks) do
+        if track.IsPlaying then
+            track:Stop()
+        end
+    end
+    stopBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    stopBtn.Text = "✅ All Stopped"
+    task.delay(1.5, function()
+        stopBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        stopBtn.Text = "⛔ Stop All"
+    end)
 end)
